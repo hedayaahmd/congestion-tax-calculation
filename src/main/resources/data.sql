@@ -1,20 +1,7 @@
-CREATE TABLE cities ( 
-   id INT PRIMARY KEY, 
-   name VARCHAR(50) NOT NULL, 
-   code VARCHAR(20) NOT NULL, 
-   submission_date DATE 
-);
-INSERT INTO cities (id, name, code) VALUES (1, 'Gothenburg', 'GSE');
-INSERT INTO cities (id, name, code) VALUES (2, 'Stockholm', 'ST');
-INSERT INTO cities (id, name, code) VALUES (3, 'Malmo', 'ML');
-INSERT INTO cities (id, name, code) VALUES (4, 'Helsingborg', 'HE');
-
-CREATE TABLE holiday(
-  id INT PRIMARY KEY,
-  date TIMESTAMP NOT NULL,
-  city_id INT,
-  foreign key (city_id) references cities(id)
-);
+INSERT INTO city (id, name, code) VALUES (1, 'Gothenburg', 'GSE');
+INSERT INTO city (id, name, code) VALUES (2, 'Stockholm', 'ST');
+INSERT INTO city (id, name, code) VALUES (3, 'Malmo', 'ML');
+INSERT INTO city (id, name, code) VALUES (4, 'Helsingborg', 'HE');
 
 INSERT INTO holiday (id, date, city_id) VALUES('1', parsedatetime('01-01-2013 00:00:00', 'dd-MM-yyyy hh:mm:ss'), 1);
 INSERT INTO holiday (id, date, city_id) VALUES('2', parsedatetime('28-03-2013 00:00:00', 'dd-MM-yyyy hh:mm:ss'), 1);
@@ -31,15 +18,6 @@ INSERT INTO holiday (id, date, city_id) VALUES('12', parsedatetime('24-12-2013 0
 INSERT INTO holiday (id, date, city_id) VALUES('13', parsedatetime('25-12-2013 00:00:00', 'dd-MM-yyyy hh:mm:ss'), 1);
 INSERT INTO holiday (id, date, city_id) VALUES('14', parsedatetime('26-12-2013 00:00:00', 'dd-MM-yyyy hh:mm:ss'), 1);
 INSERT INTO holiday (id, date, city_id) VALUES('15', parsedatetime('31-12-2013 00:00:00', 'dd-MM-yyyy hh:mm:ss'), 1);
-
-CREATE TABLE tax_rate(
-  id INT PRIMARY KEY,
-  start_date TIMESTAMP NOT NULL,
-  end_date TIMESTAMP NOT NULL,
-  tax INT NOT NULL,
-  city_id INT,
-  foreign key (city_id) references cities(id)
-);
 
 INSERT INTO tax_rate (id, start_date, end_date, city_id, tax) VALUES('1', parsedatetime('01-01-1970 06:00', 'dd-MM-yyyy hh:mm'), parsedatetime('01-01-1970 06:29', 'dd-MM-yyyy hh:mm'), 1, 8);
 INSERT INTO tax_rate (id, start_date, end_date, city_id, tax) VALUES('2', parsedatetime('01-01-1970 06:30', 'dd-MM-yyyy hh:mm'), parsedatetime('01-01-1970 06:59', 'dd-MM-yyyy hh:mm'), 1, 13);

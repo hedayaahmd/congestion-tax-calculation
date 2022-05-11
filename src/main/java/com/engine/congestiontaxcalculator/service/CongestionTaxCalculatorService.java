@@ -41,9 +41,15 @@ public class CongestionTaxCalculatorService {
     @Value("${singleCharge}")
     private Double singleChargeTime;
 
+    @Value("${daysBeforePublicHoliday}")
+    private Integer daysBeforePublicHoliday;
+
     public Double getTax(String vehicleNumber, String cityCode) throws TaxException {
         Car car = carRepository.findOneByNumber(vehicleNumber);
-        //TODO: check null
+        if (car == null) {
+            LOGGER.log(Level.WARNING, "Invalid car number");
+            throw new TaxException("Invalid Car number");
+        }
         List<History> carHistory = historyRepository.findByCar(car);
         List<Date> dates = carHistory.stream().map(history -> history.getDate()).collect(Collectors.toList());
         return getTax(car.getType(), (Date[]) dates.toArray(), cityCode);
@@ -88,37 +94,36 @@ public class CongestionTaxCalculatorService {
         return taxExempt.contains(vehicleType);
     }
 
-    public LocalDateTime convertToLocalDateTimeViaMilisecond(Date dateToConvert) {
-        return Instant.ofEpochMilli(dateToConvert.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+    public LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+        return dateToConvert.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 
     private Boolean isTollFreeDate(Date date, City city) {
-        LocalDateTime localDate = convertToLocalDateTimeViaMilisecond(date);
+        LocalDateTime localDate = convertToLocalDateTimeViaInstant(date);
 
         int year = localDate.getYear();
 
-        // can we also add to db config for each city
-        if (localDate.getDayOfWeek() == DayOfWeek.SATURDAY || localDate.getDayOfWeek() == DayOfWeek.SUNDAY)
+        if (localDate.getDayOfWeek() == DayOfWeek.SATURDAY || localDate.getDayOfWeek() == DayOfWeek.SUNDAY){
             return true;
+        }
 
         List<Holiday> holidayList = holidayRepository.findByCity(city);
 
-        // validate only for year 2013
+        // validate for year 2013
         if (year == 2013) {
             for (Holiday holiday : holidayList) {
 
-                LocalDateTime startDate = convertToLocalDateTimeViaMilisecond(holiday.getDate());
-                // can we also add to db config for each city
-                LocalDateTime beforeDate = startDate.minusDays(1);
+                LocalDateTime startDate = convertToLocalDateTimeViaInstant(holiday.getDate());
+                LocalDateTime beforeDate = startDate.minusDays(this.daysBeforePublicHoliday);
 
-                // check holiday with public holidays, days before a public holiday
+                // checking public holidays, a day before a public holiday
                 if((!localDate.isBefore(beforeDate)) && localDate.isBefore(startDate)) {
                     return true;
                 }
             }
-            // can we also add to db config for each city
         } else if (localDate.getMonth() == Month.JULY) {
-            // during the month of July
             return true;
         }
         return false;
@@ -131,18 +136,17 @@ public class CongestionTaxCalculatorService {
         }
         List<TaxRate> taxRates = taxRateRepository.findByCity(city);
         double taxRate = 0.0d;
-        LocalDateTime localDate = convertToLocalDateTimeViaMilisecond(date);
+        LocalDateTime localDate = convertToLocalDateTimeViaInstant(date);
 
         for (TaxRate rate : taxRates) {
 
-            LocalDateTime startDate = convertToLocalDateTimeViaMilisecond(rate.getStartDate());
-            LocalDateTime endDate = convertToLocalDateTimeViaMilisecond(rate.getEndDate());
+            LocalDateTime startDate = convertToLocalDateTimeViaInstant(rate.getStartDate());
+            LocalDateTime endDate = convertToLocalDateTimeViaInstant(rate.getEndDate());
 
-            LocalDateTime newStartDate = localDate.withHour(startDate.getHour()).withMinute(startDate.getMinute());
-            LocalDateTime endStartDate = localDate.withHour(endDate.getHour()).withMinute(endDate.getMinute());
-            // TODO : update check range and if you can check for dates is better
-            Boolean containsToday = (!localDate.isBefore(newStartDate)) && (localDate.isBefore(endStartDate));
-            if (containsToday) {
+            LocalDateTime localStartDate = localDate.withHour(startDate.getHour()).withMinute(startDate.getMinute());
+            LocalDateTime localEndDate = localDate.withHour(endDate.getHour()).withMinute(endDate.getMinute());
+            Boolean isBetween = (!localDate.isBefore(localStartDate)) && (localDate.isBefore(localEndDate));
+            if (isBetween) {
                 taxRate = rate.getTax();
             }
         }

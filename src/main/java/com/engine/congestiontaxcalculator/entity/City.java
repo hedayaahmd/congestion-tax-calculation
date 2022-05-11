@@ -27,5 +27,5 @@ public class City {
     private String code;
 
     @OneToMany(mappedBy = "city")
-    private Set<Holiday> holidays = new HashSet<>();
+    private Set<Holiday> holidays;
 }
